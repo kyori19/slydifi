@@ -1,9 +1,14 @@
 %SATySFi v0.1.0
-@require: list
-@import: overlay
-@import: frame
+use package Stdlib
+use Overlay of `./overlay`
+use Frame of `./frame`
 
 module Slydifi = struct
+
+  module Option = Stdlib.Option
+
+  module Frame = Frame
+  module Overlay = Overlay
 
   val bg-graphic-box-offset = 100pt
 

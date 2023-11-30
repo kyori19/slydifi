@@ -1,8 +1,11 @@
 %SATySFi v0.1.0
-@require: list
-@require: gr
+use package Stdlib
 
 module Overlay = struct
+
+  module Gr = Stdlib.Gr
+  module List = Stdlib.List
+  module Option = Stdlib.Option
 
   type condition = int -> bool
 

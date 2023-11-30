@@ -1,10 +1,17 @@
 %SATySFi v0.1.0
-@require: color
-@require: code
-@import: ../slydifi
-% @require: list
+use package Code
+use package FontIpaEx
+use package FontLatinModern
+use package Stdlib
+use Slydifi of `../slydifi`
 
 module Plain = struct
+
+  module Color = Stdlib.Color
+  module Frame = Slydifi.Frame
+  module Gr = Stdlib.Gr
+  module Option = Stdlib.Option
+  module Overlay = Slydifi.Overlay
 
   signature Font = sig
     val normal: context -> context
@@ -116,9 +123,10 @@ module Plain = struct
   module DefaultConfig :> Config = struct
     module Font = struct
       val set-fonts fsize ctx = ctx
-        |> set-font Latin          (`lmsans`, 1.0, 0.0)
-        |> set-font Kana           (`ipaexg`, 1.0, 0.0)
-        |> set-font HanIdeographic (`ipaexg`, 1.0, 0.0)
+        |> set-font Latin          (FontLatinModern.sans, 1.0, 0.0)
+        |> set-font Kana           (FontIpaEx.gothic, 1.0, 0.0)
+        |> set-font HanIdeographic (FontIpaEx.gothic, 1.0, 0.0)
+        |> set-font OtherScript    (FontLatinModern.sans, 1.0, 0.0)
         |> set-font-size fsize
         |> set-paragraph-margin (fsize *' 0.65) (fsize *' 0.65)
         |> set-leading (fsize *' 1.4)

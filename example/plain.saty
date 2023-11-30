@@ -1,9 +1,23 @@
 %SATySFi v0.1.0
-@import: ../src/slydifi
-@import: ../src/overlay
-@import: ../src/theme/plain
-@require: code
-@require: color
+#[config (|
+  registries = [
+    (|
+      name = `default`,
+      remote = Git (|
+        url = `https://github.com/SATySFi/default-registry`,
+        branch = `format-1`,
+      |),
+    |)
+  ],
+  dependencies = [
+    (| name = `code`, registry = `default`, requirement = `^0.0.1` |),
+    (| name = `font-ipa-ex`, registry = `default`, requirement = `^0.0.1` |),
+    (| name = `stdlib`, registry = `default`, requirement = `^0.0.1` |),
+  ],
+|)]
+use Slydifi of `../src/slydifi`
+use Overlay of `../src/overlay`
+use Plain of `../src/theme/plain`
 
 let inline \jugem = {
   寿限無、寿限無、五劫のすりきれ、

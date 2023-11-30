@@ -1,7 +1,9 @@
 %SATySFi v0.1.0
-@require: list
+use package Stdlib
 
 module Frame = struct
+
+  module List = Stdlib.List
 
   type element =
   | Gr of graphics
