@@ -101,6 +101,7 @@ module Slydifi = struct
         |> set-hyphen-penalty 100
 
     val document bt =
+      let _ = is-first-page <- true in
       let page = (T.layout#paper-width, T.layout#paper-height) in
       let pagecontf _ =
         (|
