@@ -102,6 +102,7 @@ module Slydifi = struct
 
     val document bt =
       let _ = is-first-page <- true in
+      let _ = page-num <- 0 in
       let page = (T.layout#paper-width, T.layout#paper-height) in
       let pagecontf _ =
         (|
