@@ -39,79 +39,81 @@ module Plain = struct
     module Length: Length
   end
 
-  module Make = fun (C: Config) -> struct
-    module Template = struct
-      type title-content = (| title: inline-text |)
+  module Template = fun (C: Config) -> struct
+    type title-content = (| title: inline-text |)
 
-      val layout = (|
-        paper-width = 254mm,
-        paper-height = 142.9mm,
-        text-width = 254mm -' 40pt,
-        text-height = 142.9mm -' 30pt,
-        text-horizontal-margin = 20pt,
-        text-vertical-margin = 10pt,
-      |)
-      val init-ctxf ctx = ctx |> C.Font.normal
+    val layout = (|
+      paper-width = 254mm,
+      paper-height = 142.9mm,
+      text-width = 254mm -' 40pt,
+      text-height = 142.9mm -' 30pt,
+      text-horizontal-margin = 20pt,
+      text-vertical-margin = 10pt,
+    |)
+    val init-ctxf ctx = ctx |> C.Font.normal
 
-      val frame-element-master =
-        let gr-bg =
-          Gr.rectangle (0pt, 0pt) (layout#paper-width, layout#paper-height)
-            |> fill C.Color.bg
+    val frame-element-master =
+      let gr-bg =
+        Gr.rectangle (0pt, 0pt) (layout#paper-width, layout#paper-height)
+          |> fill C.Color.bg
+      in
+      Frame.gr gr-bg
+
+    val frame-element-footer ctx =
+      let gr-pagenum =
+        let it-pagenum = !Slydifi.page-num |> arabic |> embed-string in
+        let it-total = Slydifi.get-totalpage () |> embed-string in
+        let ctx-pagenum = C.Font.pagenum ctx in
+        let ib = read-inline ctx-pagenum {#it-pagenum;/#it-total;} in
+        let (wid, _, dp) = get-natural-metrics ib in
+
+        let x = layout#paper-width -' wid -' 10pt in
+        let y = dp +' 10pt in
+        draw-text (x, y) ib
+      in
+      Frame.gr gr-pagenum
+
+
+    val frame-title ctx content =
+      let it-title = content#title in
+      let ib-title =
+        let ctx = ctx |> C.Font.slide-title in
+        read-inline ctx it-title
+      in
+      let bb-skip = block-skip 100pt in
+      let bb-title = line-break false false ctx (inline-fil ++ ib-title ++ inline-fil) in
+      ([frame-element-master], bb-skip +++ bb-title, [])
+
+    val frame-normal ctx content =
+      let bb-title =
+        let ctx =
+          ctx
+            |> C.Font.frame-title
+            |> set-paragraph-margin 0pt C.Length.margin-bot-frame-title
         in
-        Frame.gr gr-bg
-
-      val frame-element-footer ctx =
-        let gr-pagenum =
-          let it-pagenum = !Slydifi.page-num |> arabic |> embed-string in
-          let it-total = Slydifi.get-totalpage () |> embed-string in
-          let ctx-pagenum = C.Font.pagenum ctx in
-          let ib = read-inline ctx-pagenum {#it-pagenum;/#it-total;} in
-          let (wid, _, dp) = get-natural-metrics ib in
-
-          let x = layout#paper-width -' wid -' 10pt in
-          let y = dp +' 10pt in
-          draw-text (x, y) ib
-        in
-        Frame.gr gr-pagenum
-
-
-      val frame-title ctx content =
         let it-title = content#title in
         let ib-title =
-          let ctx = ctx |> C.Font.slide-title in
           read-inline ctx it-title
         in
-        let bb-skip = block-skip 100pt in
-        let bb-title = line-break false false ctx (inline-fil ++ ib-title ++ inline-fil) in
-        ([frame-element-master], bb-skip +++ bb-title, [])
+        line-break false false ctx (inline-fil ++ ib-title ++ inline-fil)
+      in
+      let bb-body = read-block ctx content#body in
+      ([frame-element-master, frame-element-footer ctx], bb-title +++ bb-body, [])
 
-      val frame-normal ctx content =
-        let bb-title =
-          let ctx =
+    val inline ctx \emph ?(cond = cond-opt) it =
+      let cond = cond-opt |> Option.from (fun _ -> true) in
+      let ctx =
+        Overlay.Func.select-from-two cond
+          (C.Font.emph ctx)
             ctx
-              |> C.Font.frame-title
-              |> set-paragraph-margin 0pt C.Length.margin-bot-frame-title
-          in
-          let it-title = content#title in
-          let ib-title =
-            read-inline ctx it-title
-          in
-          line-break false false ctx (inline-fil ++ ib-title ++ inline-fil)
-        in
-        let bb-body = read-block ctx content#body in
-        ([frame-element-master, frame-element-footer ctx], bb-title +++ bb-body, [])
+      in
+      read-inline ctx it
+  end
 
-      val inline ctx \emph ?(cond = cond-opt) it =
-        let cond = cond-opt |> Option.from (fun _ -> true) in
-        let ctx =
-          Overlay.Func.select-from-two cond
-            (C.Font.emph ctx)
-              ctx
-        in
-        read-inline ctx it
-    end
+  module Make = fun (C: Config) -> struct
+    module T = Template C
 
-    include Slydifi.Make Template
+    include Slydifi.Make T
 
     val block +frame-dummy it-title bt-body =
       let () = Slydifi.increment-page-num 2 in

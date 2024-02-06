@@ -1,0 +1,120 @@
+use package Code
+use package FontOpenSans
+use package FontGenShinGothic
+use package Stdlib.Color
+use package Stdlib.Gr
+use package Stdlib.Option
+use Slydifi of `../slydifi`
+use Plain of `./plain`
+
+module BTau = struct
+
+  module DefaultConfig = struct
+    module Color = struct
+      val primary-light = Color.rgb 0.933 1. 0.98
+      val primary = Color.rgb 0. 0.62 0.451
+      val primary-dark = Color.rgb 0.078 0.267 0.216
+  
+      val accent = Color.rgb 0.58 0. 0.827
+  
+      val fg = primary-dark
+      val bg = Color.white
+    end
+
+    module Font = struct
+      val regular-font = ((FontOpenSans.light, 1.0, 0.0), (FontGenShinGothic.light, 1.0, 0.0))
+      val bold-font = ((FontOpenSans.bold, 1.0, 0.0), (FontGenShinGothic.bold, 1.0, 0.0))
+
+      val set-font-all (l, j) ctx = ctx
+        |> set-font Latin          l
+        |> set-font Kana           j
+        |> set-font HanIdeographic j
+        |> set-font OtherScript    l
+
+      val set-fonts fsize f ctx = ctx
+        |> set-font-all f
+        |> set-font-size fsize
+        |> set-paragraph-margin (fsize *' 0.65) (fsize *' 0.65)
+        |> set-leading (fsize *' 1.4)
+        |> set-code-text-command (command \Code.code)
+
+      val normal = set-fonts 20pt regular-font
+      val slide-title ctx = ctx
+        |> set-fonts 36pt bold-font
+        |> set-text-color Color.primary
+      val slide-author = set-fonts 24pt regular-font
+      val slide-date = set-fonts 20pt regular-font
+      val section-title ctx = ctx
+        |> set-fonts 28pt bold-font
+        |> set-text-color Color.primary
+      val frame-title ctx = ctx
+        |> set-fonts 24pt bold-font
+        |> set-text-color Color.primary
+      val pagenum = set-fonts 12pt regular-font
+
+      val emph ctx = ctx
+        |> set-font-all bold-font
+        |> set-text-color Color.accent
+    end
+
+    module Length = struct
+      val margin-bot-frame-title = 50pt
+    end
+  end
+
+  module Template = fun (C: Plain.Config) -> struct
+    module Parent = Plain.Template C
+
+    type title-content = Parent.title-content
+    val layout = Parent.layout
+    val init-ctxf = Parent.init-ctxf
+    val frame-element-master = Parent.frame-element-master
+    val frame-element-footer = Parent.frame-element-footer
+    val inline \emph ?(cond = cond-opt) it =
+      let cond = cond-opt |> Option.from (fun _ -> true) in
+      { \Parent.emph?(cond = cond)(it); }
+
+
+    val frame-title ctx content =
+      let it-title = content#title in
+      let ib-title =
+        let ctx = ctx |> C.Font.slide-title in
+        read-inline ctx it-title
+      in
+      let bb-skip = block-skip 150pt in
+      let bb-title = line-break false false ctx (inline-fil ++ ib-title) in
+      ([frame-element-master], bb-skip +++ bb-title, [])
+
+    val frame-normal ctx content =
+      let bb-title =
+        let ctx =
+          ctx
+            |> C.Font.frame-title
+            |> set-paragraph-margin 0pt C.Length.margin-bot-frame-title
+        in
+        let it-title = content#title in
+        let ib-title =
+          read-inline ctx it-title
+        in
+        line-break false false ctx (ib-title ++ inline-fil)
+      in
+      let sep =
+        let xs = layout#text-horizontal-margin in
+        let xe = layout#paper-width -' layout#text-horizontal-margin in
+        let y = layout#paper-height -' C.Length.margin-bot-frame-title in
+        Gr.line (xs, y) (xe, y)
+          |> stroke 1pt DefaultConfig.Color.primary
+      in
+      let bb-body = read-block ctx content#body in
+      ([frame-element-master, frame-element-footer ctx], block-skip 10pt +++ bb-title +++ bb-body, [Slydifi.Frame.Gr sep])
+  end
+
+  module Make = fun (C: Plain.Config) -> struct
+    module T = Template C
+
+    include Slydifi.Make T
+  end
+
+  module DefaultClass = Make DefaultConfig
+
+end
